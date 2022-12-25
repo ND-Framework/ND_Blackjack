@@ -1,3 +1,5 @@
+NDCore = exports["ND_Core"]:GetCoreObject()
+
 local blackjackTables = {
     --[chairId] == false or source if taken
 }
@@ -9,14 +11,17 @@ end
 local blackjackGameInProgress = {}
 local blackjackGameData = {}
 
-function tryTakeChips(source,amount)
-    --returns true if taken chips succesfully
-    --returns false if doesn't have enough chips
-    return true
+function tryTakeChips(source, amount)
+    player = NDCore.Functions.GetPlayer(source)
+    if player.cash >= amount then
+        NDCore.Functions.DeductMoney(amount, source, "cash")
+        return true
+    end
+    return false
 end
 
-function giveChips(source,amount)
-    --gives amount in chips to source
+function giveChips(source, amount)
+    NDCore.Functions.AddMoney(amount, source, "cash")
 end
 
 AddEventHandler('playerDropped', function (reason)
