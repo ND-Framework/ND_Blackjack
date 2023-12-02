@@ -2,10 +2,7 @@ fx_version "cerulean"
 game "gta5"
 description "DiamondBlackjack created by Robbster"
 
-client_script "source/client.lua"
-server_script "source/server.lua"
-
-files{
+files {
 	"source/peds.meta",
 	'audio/dlcvinewood_amp.dat10',
 	'audio/dlcvinewood_amp.dat10.nametable',
@@ -38,3 +35,9 @@ data_file 'AUDIO_DYNAMIXDATA' 'audio/dlcvinewood_mix.dat'
 data_file 'AUDIO_SYNTHDATA' 'audio/dlcVinewood_amp.dat'
 data_file 'AUDIO_SPEECHDATA' 'audio/dlcvinewood_speech.dat'
 data_file 'AUDIO_WAVEPACK' 'audio/sfx/dlc_vinewood'
+
+server_script "source/server.lua"
+client_scripts {
+    "config.lua",
+    "source/client.lua"
+}

@@ -11,6 +11,7 @@ local blackjackGameData = {}
 
 function tryTakeChips(source, amount)
     if GetResourceState("ox_inventory") ~= "started" then return true end
+    local inventory = exports["ox_inventory"]
     if inventory:GetItem(source, "casino_chips", nil, true) < amount then return end
     return inventory:RemoveItem(source, "casino_chips", amount) == true
 end

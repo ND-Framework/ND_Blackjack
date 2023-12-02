@@ -35,122 +35,12 @@ local canExitBlackjack = false
 local dealerSecondCardFromGameId = {} 
 local blackjackGameInProgress = false
 local shouldForceIdleCardGames = false
+local currentPlayingTable = nil
 
-local cfg = {}
-
---[[
-	Table colors
-	0: Green
-	1: Red
-	2: Blue
-	3: Purple
---]]
-
---Please note the config order is important, dealerPositions must start from 0 and increase consecutively 
-cfg.blackjackTables = {
-    --[id] = {x,y,z,heading}
-    [0] = {
-        dealerPos = vec3(1134.3099, 267.2745, -51.0357),
-        dealerHeading = 137.2609,
-        tablePos = vec3(1133.73, 266.694, -52.040),
-        tableHeading = -45.00,
-        distance = 1000.0,
-        prop = `vw_prop_casino_blckjack_01b`,
-        color = 3
-    },
-    [1] = {
-        dealerPos = vec3(1128.853, 261.757, -51.036),
-        dealerHeading = 314.656,
-        tablePos = vec3(1129.406, 262.357, -52.0410),
-        tableHeading = 135.309,
-        distance = 1000.0,
-        prop = `vw_prop_casino_blckjack_01b`,
-        color = 3
-    }
-    -- [0] = {
-    --     dealerPos = vector3(1024.71, 59.47, 72.48),
-    --     dealerHeading = 193.42,
-    --     tablePos = vector3(1024.91, 58.68, 71.48),
-    --     tableHeading = 12.99,
-    --     distance = 1000.0,
-    --     prop = 112404821
-    -- },
-    -- [1] = {
-    --     dealerPos = vector3(1024.27, 61.43, 72.48),
-    --     dealerHeading = 12.41,
-    --     tablePos = vector3(1024.07, 62.21, 71.48),
-    --     tableHeading = 192.99,
-    --     distance = 1000.0,
-    --     prop = 112404821
-    -- },
-    -- [2] = {
-    --     dealerPos = vector3(1016.73, 51.89, 73.28),
-    --     dealerHeading = 203.89,
-    --     tablePos = vector3(1017.11, 51.20, 72.28),
-    --     tableHeading = 25.99,
-    --     distance = 1000.0,
-    --     prop = "-1650151675"
-    -- },
-    -- [3] = {
-    --     dealerPos = vector3(1020.53, 44.48, 73.28),
-    --     dealerHeading = 27.82,
-    --     tablePos = vector3(1020.16, 45.17, 72.28),
-    --     tableHeading = 205.99,
-    --     distance = 1000.0,
-    --     prop = "-1650151675"
-    -- },
-    -- [4] = {
-    --     dealerPos = vector3(1009.92, 67.51, 73.28),
-    --     dealerHeading = 285.49,
-    --     tablePos = vector3(1010.66, 67.78, 72.28),
-    --     tableHeading = 105.99,
-    --     distance = 1000.0,
-    --     prop = "-1650151675"
-    -- },
-    -- [5] = {
-    --     dealerPos = vector3(1017.89, 69.99, 73.28),
-    --     dealerHeading = 104.28,
-    --     tablePos = vector3(1017.13, 69.73, 72.28),
-    --     tableHeading = 285.99,
-    --     distance = 1000.0,
-    --     prop = "-1650151675"
-    -- }
-
-    -- [0] = {
-    --     dealerPos = vector3(1149.3828125,269.19174194336,-52.020873718262),
-    --     dealerHeading = 46.0,
-    --     tablePos = vector3(1148.837, 269.747, -52.8409),
-    --     tableHeading = -134.69,
-    --     distance = 1000.0,
-    --     prop = "vw_prop_casino_blckjack_01"
-    -- },
-    -- [1] = {
-    --     dealerPos = vector3(1151.28,267.33,-51.840),
-    --     dealerHeading = 222.2,
-    --     tablePos = vector3(1151.84, 266.747, -52.8409),
-    --     tableHeading = 45.31,
-    --     distance = 1000.0,
-    --     prop = "vw_prop_casino_blckjack_01"
-    -- },
-    -- [2] = {
-    --     dealerPos = vector3(1128.862,261.795,-51.0357),
-    --     dealerHeading = 315.0,
-    --     tablePos = vector3(1129.406, 262.3578, -52.041),
-    --     tableHeading = 135.31,
-    --     distance = 1000.0,
-    --     prop = "vw_prop_casino_blckjack_01b"
-    -- },
-    -- [3] = {
-    --     dealerPos = vector3(1143.859,246.783,-51.035),
-    --     dealerHeading = 313.0,
-    --     tablePos = vector3(1144.429, 247.3352, -52.041),
-    --     tableHeading = 135.31,
-    --     distance = 1000.0,
-    --     prop = "vw_prop_casino_blckjack_01b"
-    -- },
-}
-
-
+cfg.blackjackTables = {}
+for i=1, #cfg.tables do
+    cfg.blackjackTables[i-1] = cfg.tables[i]
+end
 
 local casinoTableList = {
     `ch_prop_casino_blackjack_01b`,
@@ -282,7 +172,14 @@ Citizen.CreateThread(function()
                 if tonumber(tmpInput) then
                     tmpInput = tonumber(tmpInput) 
                     if tmpInput > 0 then
-                        currentBetAmount = tmpInput
+                        local tableId = blackjack_func_368(currentPlayingTable)
+                        local info = cfg.blackjackTables[tableId]
+                        if tmpInput < info.max then
+                            startTime = GetGameTimer()
+                            currentBetAmount = tmpInput
+                        else
+                            notify('~r~ Maximum bet reached')
+                        end
                     end
                 end
             end
@@ -298,16 +195,24 @@ Citizen.CreateThread(function()
                     notify("~r~Invalid amount.")
                 end
             end
-            if IsControlPressed(0, 10) and GetGameTimer()-startTime > 250 then --Increase bet [pageup]
-		startTime = GetGameTimer()
-                currentBetAmount = currentBetAmount + 100
+            if IsControlPressed(0, 10) and GetGameTimer()-startTime > 150 then --Increase bet [pageup]
+                local tableId = blackjack_func_368(currentPlayingTable)
+                local info = cfg.blackjackTables[tableId]
+                if currentBetAmount < info.max then
+                    startTime = GetGameTimer()
+                    currentBetAmount = currentBetAmount + info.step
+                else
+                    notify('~r~ Maximum bet reached')
+                end
             end            
-            if IsControlPressed(0, 11) and GetGameTimer()-startTime > 250 then --Decrease bet [pagedown]
-                if currentBetAmount >= 100 then 
-		    startTime = GetGameTimer()
-                    currentBetAmount = currentBetAmount - 100
-		else
-		    notify('~r~ Minimum bet reached')
+            if IsControlPressed(0, 11) and GetGameTimer()-startTime > 150 then --Decrease bet [pagedown]
+                local tableId = blackjack_func_368(currentPlayingTable)
+                local info = cfg.blackjackTables[tableId]
+                if currentBetAmount >= info.min then
+		            startTime = GetGameTimer()
+                    currentBetAmount = currentBetAmount - info.step
+                else
+                    notify('~r~ Minimum bet reached')
                 end
             end            
         end
@@ -463,7 +368,11 @@ AddEventHandler("Blackjack:beginBetsBlackjack",function(gameID,tableId)
     waitingForBetState = true
     dealerPed = getDealerFromTableId(tableId)
     PlayAmbientSpeech1(dealerPed,"MINIGAME_DEALER_PLACE_BET","SPEECH_PARAMS_FORCE_NORMAL_CLEAR",1)
-    currentBetAmount = 0
+
+    local tableId = blackjack_func_368(currentPlayingTable)
+    local info = cfg.blackjackTables[tableId]
+    currentBetAmount = info.min
+
     dealersHand = 0
     currentHand = 0
     SetEntityCoordsNoOffset(dealerPed, cfg.blackjackTables[tableId].dealerPos.x,cfg.blackjackTables[tableId].dealerPos.y,cfg.blackjackTables[tableId].dealerPos.z, 0,0,1)
@@ -613,7 +522,6 @@ function goToBlackjackSeat(blackjackSeatID)
     canExitBlackjack = true
     currentHand = 0
     dealersHand = 0
-    showHowToBlackjack(false)
     closestDealerPed, closestDealerPedDistance = getClosestDealer()
     PlayAmbientSpeech1(closestDealerPed,"MINIGAME_DEALER_GREET","SPEECH_PARAMS_FORCE_NORMAL_CLEAR",1)
     --print("[CMG Casino] start sit at blackjack seat") 
@@ -3092,6 +3000,7 @@ Citizen.CreateThread(function()
                 local vectorOfBlackjackSeat = blackjack_func_348(i)
                 local distToBlackjackSeat = #(playerCoords - vectorOfBlackjackSeat)
                 if distToBlackjackSeat < closestChairDist then 
+                    currentPlayingTable = i
                     closestChairDist = distToBlackjackSeat
                     closestChair = i
                 end
