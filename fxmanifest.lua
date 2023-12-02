@@ -1,28 +1,12 @@
-fx_version 'adamant'
-
+fx_version "cerulean"
 game "gta5"
-
 description "DiamondBlackjack created by Robbster"
 
-client_scripts {
-	"src/RMenu.lua",
-	"src/menu/RageUI.lua",
-	"src/menu/Menu.lua",
-	"src/menu/MenuController.lua",
-	"src/components/*.lua",
-	"src/menu/elements/*.lua",
-	"src/menu/items/*.lua",
-	"src/menu/panels/*.lua",
-	"src/menu/panels/*.lua",
-	"src/menu/windows/*.lua",
-	"cl_blackjack.lua",
-	"cl_casinoteleporter.lua",
-}
-
-server_script "sv_blackjack.lua"
+client_script "source/client.lua"
+server_script "source/server.lua"
 
 files{
-	"peds.meta",
+	"source/peds.meta",
 	'audio/dlcvinewood_amp.dat10',
 	'audio/dlcvinewood_amp.dat10.nametable',
 	'audio/dlcvinewood_amp.dat10.rel',
@@ -46,7 +30,7 @@ files{
 	'audio/sfx/dlc_vinewood/*.awc',
 }
 
-data_file "PED_METADATA_FILE" "peds.meta"
+data_file "PED_METADATA_FILE" "source/peds.meta"
 
 data_file 'AUDIO_GAMEDATA' 'audio/dlcvinewood_game.dat'
 data_file 'AUDIO_SOUNDDATA' 'audio/dlcvinewood_sounds.dat'
