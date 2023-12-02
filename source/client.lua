@@ -38,6 +38,14 @@ local shouldForceIdleCardGames = false
 
 local cfg = {}
 
+--[[
+	Table colors
+	0: Green
+	1: Red
+	2: Blue
+	3: Purple
+--]]
+
 --Please note the config order is important, dealerPositions must start from 0 and increase consecutively 
 cfg.blackjackTables = {
     --[id] = {x,y,z,heading}
@@ -47,7 +55,8 @@ cfg.blackjackTables = {
         tablePos = vec3(1133.73, 266.694, -52.040),
         tableHeading = -45.00,
         distance = 1000.0,
-        prop = `vw_prop_casino_blckjack_01`
+        prop = `vw_prop_casino_blckjack_01b`,
+        color = 3
     },
     [1] = {
         dealerPos = vec3(1128.853, 261.757, -51.036),
@@ -55,7 +64,8 @@ cfg.blackjackTables = {
         tablePos = vec3(1129.406, 262.357, -52.0410),
         tableHeading = 135.309,
         distance = 1000.0,
-        prop = `vw_prop_casino_blckjack_01`
+        prop = `vw_prop_casino_blckjack_01b`,
+        color = 3
     }
     -- [0] = {
     --     dealerPos = vector3(1024.71, 59.47, 72.48),
@@ -138,6 +148,26 @@ cfg.blackjackTables = {
     --     distance = 1000.0,
     --     prop = "vw_prop_casino_blckjack_01b"
     -- },
+}
+
+
+
+local casinoTableList = {
+    `ch_prop_casino_blackjack_01b`,
+    `vw_prop_casino_blckjack_01b`,
+    `ch_prop_casino_poker_01a`,
+    `ch_prop_casino_poker_01b`,
+    `vw_prop_casino_3cardpoker_01`,
+    `vw_prop_casino_3cardpoker_01b`,
+    `h4_prop_casino_3cardpoker_01a`,
+    `h4_prop_casino_3cardpoker_01b`,
+    `h4_prop_casino_3cardpoker_01c`,
+    `h4_prop_casino_3cardpoker_01d`,
+    `h4_prop_casino_3cardpoker_01e`,
+    `ch_prop_casino_roulette_01a`,
+    `ch_prop_casino_roulette_01b`,
+    `vw_prop_casino_roulette_01`,
+    `vw_prop_casino_roulette_01b`
 }
 
 --Use this command to get the coords you need for setting up new tables. 
@@ -1420,7 +1450,24 @@ function blackjack_func_348(iParam0) --GetVectorFromChairId
     local blackjackTableObj
     local tableId = blackjack_func_368(iParam0)
     local x,y,z = getTableCoords(tableId)
-    blackjackTableObj = GetClosestObjectOfType(x, y, z, 1.0, cfg.blackjackTables[tableId].prop, 0, 0, 0)
+    local model = cfg.blackjackTables[tableId].prop
+    blackjackTableObj = GetClosestObjectOfType(x, y, z, 1.0, model, 0, 0, 0)
+    if not blackjackTableObj or not DoesEntityExist(blackjackTableObj) then
+        for num=1, #casinoTableList do
+            local _model = casinoTableList[num]
+            local obj = GetClosestObjectOfType(x, y, z, 1.0, _model, false, false, false)
+            if obj and DoesEntityExist(obj) then
+                SetEntityCoords(obj, x, y, z-2.0)
+                DeleteEntity(obj)
+            end
+        end
+        RequestModel(model)
+        blackjackTableObj = CreateObject(model, x, y, z, false, false, false)
+        SetEntityHeading(blackjackTableObj, cfg.blackjackTables[tableId].tableHeading)
+        SetObjectTextureVariation(blackjackTableObj, cfg.blackjackTables[tableId].color)
+    elseif GetObjectTextureVariation(blackjackTableObj) ~= cfg.blackjackTables[tableId].color then
+        SetObjectTextureVariation(blackjackTableObj, cfg.blackjackTables[tableId].color)
+    end
     
     if DoesEntityExist(blackjackTableObj) and DoesEntityHaveDrawable(blackjackTableObj) then
         local localChairId = getLocalChairIndexFromGlobalChairId(iParam0)
