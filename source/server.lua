@@ -10,14 +10,24 @@ local blackjackGameInProgress = {}
 local blackjackGameData = {}
 
 function tryTakeChips(source, amount)
-    if GetResourceState("ox_inventory") ~= "started" then return true end
+    if GetResourceState("ox_inventory") ~= "started" then
+        local player = exports["ND_Core"]:getPlayer(source)
+        if not player then return end
+        if player.cash < amount then return end
+        return player.deductMoney("cash", amount, "Casino blackjack")
+    end
     local inventory = exports["ox_inventory"]
     if inventory:GetItem(source, "casino_chips", nil, true) < amount then return end
     return inventory:RemoveItem(source, "casino_chips", amount) == true
 end
 
 function giveChips(source, amount)
-    if GetResourceState("ox_inventory") ~= "started" then return end
+    if GetResourceState("ox_inventory") ~= "started" then
+        local player = exports["ND_Core"]:getPlayer(source)
+        if not player then return end
+        player.addMoney("cash", amount, "Casino blackjack")
+        return
+    end
     exports["ox_inventory"]:AddItem(source, "casino_chips", amount)
 end
 
