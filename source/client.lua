@@ -318,15 +318,54 @@ Citizen.CreateThread(function()
     end
 end)
 
-Citizen.CreateThread(function()
-    while true do 
-        local playerCoords = GetEntityCoords(PlayerPedId())
-        closeToCasino = false
-        for k,v in pairs(cfg.blackjackTables) do
-            cfg.blackjackTables[k].distance = #(playerCoords-cfg.blackjackTables[k].tablePos)
-            if cfg.blackjackTables[k].distance < 100.0 then
-                closeToCasino = true
+local function clearCasino()
+    for _, v in pairs(cfg.blackjackTables) do
+        local obj = v.entity
+        if obj and DoesEntityExist(obj) then
+            DeleteEntity(obj)
+        end
+    end
+end
+
+local function createCasino()
+    for _, v in pairs(cfg.blackjackTables) do
+        local coords = v.tablePos
+        for num=1, #casinoTableList do
+            local _model = casinoTableList[num]
+            local obj = GetClosestObjectOfType(coords.x, coords.y, coords.z, 1.0, _model, false, false, false)
+            if obj and DoesEntityExist(obj) then
+                SetEntityCoords(obj, coords.x, coords.y, coords.z-2.0)
+                DeleteEntity(obj)
             end
+        end
+
+        RequestModel(v.prop)
+        local blackjackTableObj = CreateObject(v.prop, coords.x, coords.y, coords.z, false, false, false)
+        SetEntityHeading(blackjackTableObj, v.tableHeading)
+        SetObjectTextureVariation(blackjackTableObj, v.color)
+        v.entity = blackjackTableObj
+    end
+end
+
+local function isCloseToCasino()
+    local playerCoords = GetEntityCoords(PlayerPedId())
+    for _, v in pairs(cfg.blackjackTables) do
+        v.distance = #(playerCoords-v.tablePos)
+        if v.distance < 100.0 then
+            return true
+        end
+    end
+end
+
+Citizen.CreateThread(function()
+    while true do
+        local close = isCloseToCasino()
+        if not closeToCasino and close then
+            createCasino()
+            closeToCasino = true
+        elseif closeToCasino and not close then
+            clearCasino()
+            closeToCasino = false
         end
         Wait(1000)
     end
@@ -1376,22 +1415,6 @@ function blackjack_func_348(iParam0) --GetVectorFromChairId
     local x,y,z = getTableCoords(tableId)
     local model = cfg.blackjackTables[tableId].prop
     blackjackTableObj = GetClosestObjectOfType(x, y, z, 1.0, model, 0, 0, 0)
-    if not blackjackTableObj or not DoesEntityExist(blackjackTableObj) then
-        for num=1, #casinoTableList do
-            local _model = casinoTableList[num]
-            local obj = GetClosestObjectOfType(x, y, z, 1.0, _model, false, false, false)
-            if obj and DoesEntityExist(obj) then
-                SetEntityCoords(obj, x, y, z-2.0)
-                DeleteEntity(obj)
-            end
-        end
-        RequestModel(model)
-        blackjackTableObj = CreateObject(model, x, y, z, false, false, false)
-        SetEntityHeading(blackjackTableObj, cfg.blackjackTables[tableId].tableHeading)
-        SetObjectTextureVariation(blackjackTableObj, cfg.blackjackTables[tableId].color)
-    elseif GetObjectTextureVariation(blackjackTableObj) ~= cfg.blackjackTables[tableId].color then
-        SetObjectTextureVariation(blackjackTableObj, cfg.blackjackTables[tableId].color)
-    end
     
     if DoesEntityExist(blackjackTableObj) and DoesEntityHaveDrawable(blackjackTableObj) then
         local localChairId = getLocalChairIndexFromGlobalChairId(iParam0)
@@ -3023,7 +3046,7 @@ Citizen.CreateThread(function()
             end
             --print("closestChair = ",closestChair)
         end
-        Wait(100)
+        Wait(250)
     end
 end)
 
