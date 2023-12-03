@@ -185,11 +185,13 @@ Citizen.CreateThread(function()
                     if tmpInput > 0 then
                         local tableId = blackjack_func_368(currentPlayingTable)
                         local info = cfg.blackjackTables[tableId]
-                        if tmpInput < info.max then
+                        if tmpInput > info.min and tmpInput < info.max then
                             startTime = GetGameTimer()
                             currentBetAmount = tmpInput
-                        else
+                        elseif tmpInput > info.max then
                             notify('~r~ Maximum bet reached')
+                        else
+                            notify('~r~ Minimum bet reached')
                         end
                     end
                 end
@@ -219,9 +221,12 @@ Citizen.CreateThread(function()
             if IsControlPressed(0, 11) and GetGameTimer()-startTime > 150 then --Decrease bet [pagedown]
                 local tableId = blackjack_func_368(currentPlayingTable)
                 local info = cfg.blackjackTables[tableId]
-                if currentBetAmount >= info.min then
+                if currentBetAmount-info.step > info.min then
 		            startTime = GetGameTimer()
-                    currentBetAmount = currentBetAmount - info.step
+                    currentBetAmount = currentBetAmount-info.step
+                elseif currentBetAmount > info.min then
+                    startTime = GetGameTimer()
+                    currentBetAmount = info.min
                 else
                     notify('~r~ Minimum bet reached')
                 end
