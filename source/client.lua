@@ -36,6 +36,7 @@ local dealerSecondCardFromGameId = {}
 local blackjackGameInProgress = false
 local shouldForceIdleCardGames = false
 local currentPlayingTable = nil
+local allowedToPlay = false
 
 cfg.blackjackTables = {}
 for i=1, #cfg.tables do
@@ -123,6 +124,7 @@ Citizen.CreateThread(function()
 end)
 
 local playedCasinoGuiSound = false
+local casinoResource = GetResourceState("ND_Casino") == "started"
 
 Citizen.CreateThread(function()
     while true do 
@@ -130,7 +132,16 @@ Citizen.CreateThread(function()
             if closestChair ~= nil and closestChairDist < 2 then
                 if not timeoutHowToBlackjack then
                     if blackjackTableData[closestChair] == false then 
-                        drawNativeNotification("Press ~INPUT_PICKUP~ to play the blackjack")
+                        local tableId = blackjack_func_368(currentPlayingTable)
+                        local vip = cfg.blackjackTables[tableId].vipOnly
+                        if vip and casinoResource and not exports["ND_Casino"]:isMember() then
+                            drawNativeNotification("This table is for VIP Members only")
+                            allowedToPlay = false
+                        else
+                            allowedToPlay = true
+                            local text = ("Press ~INPUT_PICKUP~ to play %s"):format(vip and "high limit blackjack" or "blackjack")
+                            drawNativeNotification(text)
+                        end
                     else 
                         drawNativeNotification("This seat is taken.")
                     end
@@ -233,7 +244,7 @@ end)
 Citizen.CreateThread(function()
     while true do
         if closestChair ~= -1 and closestChairDist < 2 then 
-            if IsControlJustPressed(0, 38) then --Sit down [E]
+            if allowedToPlay and IsControlJustPressed(0, 38) then --Sit down [E]
                 print("calling goToBlackjackSeat with chairID: " .. tostring(closestChair))
                 if blackjackTableData[closestChair] == false then
                     TriggerServerEvent("Blackjack:requestSitAtBlackjackTable",closestChair) 
